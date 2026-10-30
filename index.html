@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Together Site</title>
+<style>
+:root {
+  --bg: #F3F5F7;
+  --surface: #FFFFFF;
+  --border: #E1E6EB;
+  --text: #15181C;
+  --text-muted: #5B6670;
+  --navy: #002F60;
+  --navy-text: #FFFFFF;
+  --orange: #E47727;
+  --soft: #FBEADD;
+  --soft-text: #5C3A14;
+  --heading: #002F60;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151C;
+    --surface: #181F29;
+    --border: #2B3542;
+    --text: #ECEFF3;
+    --text-muted: #9BA8B5;
+    --navy: #0E3C73;
+    --navy-text: #FFFFFF;
+    --orange: #F08A3C;
+    --soft: #2A2013;
+    --soft-text: #F0D6AE;
+    --heading: #7FB0E8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151C; --surface: #181F29; --border: #2B3542; --text: #ECEFF3;
+  --text-muted: #9BA8B5; --navy: #0E3C73; --navy-text: #FFFFFF;
+  --orange: #F08A3C; --soft: #2A2013; --soft-text: #F0D6AE; --heading: #7FB0E8;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Nunito', system-ui, -apple-system, sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+.page { max-width: 680px; margin: 0 auto; }
+.band { background: var(--navy); padding: 30px 20px 26px; display: flex; flex-direction: column; gap: 4px; }
+.band .eyebrow { color: var(--orange); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.band h1 { margin: 0; font-size: clamp(24px,6vw,30px); font-weight: 800; color: var(--navy-text); }
+.band p { margin: 2px 0 0; font-size: 14px; color: var(--navy-text); opacity: .82; max-width: 52ch; }
+.content { padding: 20px 20px 36px; display: flex; flex-direction: column; gap: 18px; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.panel h2 { margin: 0; font-size: 17px; font-weight: 800; color: var(--heading); }
+.panel .count { font-size: 12px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+.panel .sub { margin: 0 0 14px; font-size: 13px; color: var(--text-muted); }
+.items { display: flex; flex-direction: column; }
+.item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 15px; line-height: 1.45; }
+.item:last-child { border-bottom: none; }
+.item .dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--orange); }
+.item .dot.done { background: var(--text-muted); }
+.item .txt.done { color: var(--text-muted); text-decoration: line-through; }
+.event { display: flex; gap: 14px; padding: 10px 2px; border-bottom: 1px solid var(--border); }
+.event:last-child { border-bottom: none; }
+.event .when { flex: 0 0 96px; font-size: 12.5px; font-weight: 700; color: var(--heading); line-height: 1.4; padding-top: 1px; }
+.event .what { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; }
+.callout { background: var(--soft); border-left: 6px solid var(--orange); border-radius: 8px; padding: 16px 20px; font-size: 13.5px; color: var(--soft-text); line-height: 1.55; }
+footer { padding: 0 20px 28px; text-align: center; }
+footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="band">
+    <div class="eyebrow">FirstLine Schools &middot; Together Site</div>
+    <h1>My Together Site</h1>
+    <p>Later List, Meeting with Myself, and this week's calendar &mdash; one page, built in chat.</p>
+  </header>
+
+  <main class="content">
+    <section class="panel">
+      <div class="panel-head"><h2>Later List</h2><span class="count">3 open &middot; 1 done</span></div>
+      <p class="sub">Anything that's not for right now. Capture it, then let it go.</p>
+      <div class="items">
+        <div class="item"><span class="dot"></span><span class="txt">Example: follow up on the budget question from this morning</span></div>
+        <div class="item"><span class="dot"></span><span class="txt">Example: confirm the room for Monday's training</span></div>
+        <div class="item"><span class="dot"></span><span class="txt">Example: send the follow-up email about the project</span></div>
+        <div class="item"><span class="dot done"></span><span class="txt done">Example: order supplies for the event</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Meeting with Myself</h2><span class="count">0 items</span></div>
+      <p class="sub">What to review and decide at your next weekly planning session.</p>
+      <p style="margin:4px 2px 2px;font-size:14px;color:var(--text-muted);font-style:italic;">Nothing logged yet &mdash; this fills in as you use it.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>This Week</h2><span class="count">Example week</span></div>
+      <p class="sub">Key moments, pulled from your calendar.</p>
+      <div class="items">
+        <div class="event"><span class="when">Mon 8:00&ndash;9:00</span><span class="what">Weekly Meeting with Self</span></div>
+        <div class="event"><span class="when">Wed 1:00&ndash;2:00</span><span class="what">Team huddle</span></div>
+        <div class="event"><span class="when">Fri 3:00&ndash;4:00</span><span class="what">Weekly one-on-one</span></div>
+      </div>
+    </section>
+
+    <div class="callout">
+      This is a template Together Site &mdash; a public example with placeholder items, not anyone's real list. Build your own private version as a Claude artifact first; publish a page like this only once you've decided what's okay to make public.
+    </div>
+  </main>
+
+  <footer>
+    <p>FirstLine Schools &nbsp;|&nbsp; Education for Life &nbsp;|&nbsp; www.firstlineschools.org</p>
+  </footer>
+</div>
+</body>
+</html>
