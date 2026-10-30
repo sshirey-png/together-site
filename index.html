@@ -21,17 +21,9 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #10151C;
-    --surface: #181F29;
-    --border: #2B3542;
-    --text: #ECEFF3;
-    --text-muted: #9BA8B5;
-    --navy: #0E3C73;
-    --navy-text: #FFFFFF;
-    --orange: #F08A3C;
-    --soft: #2A2013;
-    --soft-text: #F0D6AE;
-    --heading: #7FB0E8;
+    --bg: #10151C; --surface: #181F29; --border: #2B3542; --text: #ECEFF3;
+    --text-muted: #9BA8B5; --navy: #0E3C73; --navy-text: #FFFFFF;
+    --orange: #F08A3C; --soft: #2A2013; --soft-text: #F0D6AE; --heading: #7FB0E8;
     color-scheme: dark;
   }
 }
@@ -58,13 +50,18 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Nunit
 .items { display: flex; flex-direction: column; }
 .item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 2px; border-bottom: 1px solid var(--border); font-size: 15px; line-height: 1.45; }
 .item:last-child { border-bottom: none; }
-.item .dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--orange); }
-.item .dot.done { background: var(--text-muted); }
+.item .box { flex: 0 0 18px; width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--orange); margin-top: 1px; cursor: pointer; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; }
+.item .box.done { background: var(--text-muted); border-color: var(--text-muted); }
+.item .box.done::after { content: "\2713"; color: #fff; font-size: 11px; font-weight: 800; }
+.item .txt { flex: 1; cursor: pointer; }
 .item .txt.done { color: var(--text-muted); text-decoration: line-through; }
-.event { display: flex; gap: 14px; padding: 10px 2px; border-bottom: 1px solid var(--border); }
-.event:last-child { border-bottom: none; }
-.event .when { flex: 0 0 96px; font-size: 12.5px; font-weight: 700; color: var(--heading); line-height: 1.4; padding-top: 1px; }
-.event .what { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; }
+.empty { margin: 4px 2px 2px; font-size: 14px; color: var(--text-muted); font-style: italic; }
+.add-row { display: flex; gap: 8px; margin-top: 12px; }
+.add-row input { flex: 1; min-width: 0; border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; font-size: 14.5px; font-family: inherit; background: var(--bg); color: var(--text); }
+.add-row button { flex: 0 0 auto; border: none; border-radius: 9px; padding: 9px 16px; font-size: 14px; font-weight: 700; font-family: inherit; background: var(--orange); color: #fff; cursor: pointer; }
+.add-row button:disabled { opacity: .5; }
+.status-line { font-size: 12px; margin-top: 8px; min-height: 16px; color: var(--text-muted); }
+.status-line.err { color: #C0392B; }
 .callout { background: var(--soft); border-left: 6px solid var(--orange); border-radius: 8px; padding: 16px 20px; font-size: 13.5px; color: var(--soft-text); line-height: 1.55; }
 footer { padding: 0 20px 28px; text-align: center; }
 footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: italic; }
@@ -75,39 +72,34 @@ footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: ita
   <header class="band">
     <div class="eyebrow">FirstLine Schools &middot; Together Site</div>
     <h1>My Together Site</h1>
-    <p>Later List, Meeting with Myself, and this week's calendar &mdash; one page, built in chat.</p>
+    <p>Later List and Meeting with Myself &mdash; reading and writing the real Google Sheet live, through a secured webhook.</p>
   </header>
 
   <main class="content">
-    <section class="panel">
-      <div class="panel-head"><h2>Later List</h2><span class="count">3 open &middot; 1 done</span></div>
+    <section class="panel" id="panel-later">
+      <div class="panel-head"><h2>Later List</h2><span class="count" id="count-later">&hellip;</span></div>
       <p class="sub">Anything that's not for right now. Capture it, then let it go.</p>
-      <div class="items">
-        <div class="item"><span class="dot"></span><span class="txt">Example: follow up on the budget question from this morning</span></div>
-        <div class="item"><span class="dot"></span><span class="txt">Example: confirm the room for Monday's training</span></div>
-        <div class="item"><span class="dot"></span><span class="txt">Example: send the follow-up email about the project</span></div>
-        <div class="item"><span class="dot done"></span><span class="txt done">Example: order supplies for the event</span></div>
+      <div class="items" id="items-later"></div>
+      <div class="add-row">
+        <input type="text" id="input-later" placeholder="Add something&hellip;" />
+        <button id="btn-later" type="button">Add</button>
       </div>
+      <div class="status-line" id="status-later"></div>
     </section>
 
-    <section class="panel">
-      <div class="panel-head"><h2>Meeting with Myself</h2><span class="count">0 items</span></div>
+    <section class="panel" id="panel-meeting">
+      <div class="panel-head"><h2>Meeting with Myself</h2><span class="count" id="count-meeting">&hellip;</span></div>
       <p class="sub">What to review and decide at your next weekly planning session.</p>
-      <p style="margin:4px 2px 2px;font-size:14px;color:var(--text-muted);font-style:italic;">Nothing logged yet &mdash; this fills in as you use it.</p>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head"><h2>This Week</h2><span class="count">Example week</span></div>
-      <p class="sub">Key moments, pulled from your calendar.</p>
-      <div class="items">
-        <div class="event"><span class="when">Mon 8:00&ndash;9:00</span><span class="what">Weekly Meeting with Self</span></div>
-        <div class="event"><span class="when">Wed 1:00&ndash;2:00</span><span class="what">Team huddle</span></div>
-        <div class="event"><span class="when">Fri 3:00&ndash;4:00</span><span class="what">Weekly one-on-one</span></div>
+      <div class="items" id="items-meeting"></div>
+      <div class="add-row">
+        <input type="text" id="input-meeting" placeholder="Add something&hellip;" />
+        <button id="btn-meeting" type="button">Add</button>
       </div>
+      <div class="status-line" id="status-meeting"></div>
     </section>
 
     <div class="callout">
-      This is a template Together Site &mdash; a public example with placeholder items, not anyone's real list. Build your own private version as a Claude artifact first; publish a page like this only once you've decided what's okay to make public.
+      This page talks to a small Google Apps Script webhook, which is the only thing with access to the real Sheet. The Sheet itself is never published — only these two lists, through that one controlled endpoint.
     </div>
   </main>
 
@@ -115,5 +107,24 @@ footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: ita
     <p>FirstLine Schools &nbsp;|&nbsp; Education for Life &nbsp;|&nbsp; www.firstlineschools.org</p>
   </footer>
 </div>
-</body>
-</html>
+
+<script>
+var WEBHOOK_URL = "https://script.google.com/a/macros/firstlineschools.org/s/AKfycbxDoGTF_WnBukv3Wl-AiSAqkSMOPnm1tMGFrIgIOWzKxjVAFRTU_0GWEOB2XcWJqcQC/exec";
+
+// The webhook secret is never stored in this file (it's public source on GitHub).
+// Each viewer's browser remembers its own copy, entered once.
+var SECRET = null;
+try { SECRET = localStorage.getItem("together_site_secret"); } catch (e) { SECRET = null; }
+
+function promptForSecret() {
+  var entered = window.prompt("Enter the Together List webhook secret to load live data (only you should have this):");
+  if (entered) {
+    SECRET = entered.trim();
+    try { localStorage.setItem("together_site_secret", SECRET); } catch (e) {}
+    return true;
+  }
+  return false;
+}
+
+var TABS = {
+  later: { key: "Later List", itemsId: "items-later", countId: "count-later", inputId: "input-later", btnId:
