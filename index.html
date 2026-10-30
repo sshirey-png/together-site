@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Together Site</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
 :root {
   --bg: #F3F5F7;
@@ -72,14 +73,14 @@ footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: ita
   <header class="band">
     <div class="eyebrow">FirstLine Schools &middot; Together Site</div>
     <h1>My Together Site</h1>
-    <p>Later List and Meeting with Myself &mdash; reading and writing the real Google Sheet live, through a secured webhook.</p>
+    <p>Later List and Meeting with Myself &mdash; reading the real Google Sheet live via its published CSV feed, same pattern as the AI Tips site.</p>
   </header>
 
   <main class="content">
     <section class="panel" id="panel-later">
       <div class="panel-head"><h2>Later List</h2><span class="count" id="count-later">&hellip;</span></div>
       <p class="sub">Anything that's not for right now. Capture it, then let it go.</p>
-      <div class="items" id="items-later"></div>
+      <div class="items" id="items-later"><p class="empty">Loading&hellip;</p></div>
       <div class="add-row">
         <input type="text" id="input-later" placeholder="Add something&hellip;" />
         <button id="btn-later" type="button">Add</button>
@@ -90,7 +91,7 @@ footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: ita
     <section class="panel" id="panel-meeting">
       <div class="panel-head"><h2>Meeting with Myself</h2><span class="count" id="count-meeting">&hellip;</span></div>
       <p class="sub">What to review and decide at your next weekly planning session.</p>
-      <div class="items" id="items-meeting"></div>
+      <div class="items" id="items-meeting"><p class="empty">Loading&hellip;</p></div>
       <div class="add-row">
         <input type="text" id="input-meeting" placeholder="Add something&hellip;" />
         <button id="btn-meeting" type="button">Add</button>
@@ -99,7 +100,7 @@ footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: ita
     </section>
 
     <div class="callout">
-      This page talks to a small Google Apps Script webhook, which is the only thing with access to the real Sheet. The Sheet itself is never published — only these two lists, through that one controlled endpoint.
+      Reads come from this Sheet's published CSV feed (refreshes every ~60 seconds, same as the AI Tips site). Adding or checking off an item writes through a small, secret-gated Apps Script webhook &mdash; the Sheet itself stays private; only these two tabs' published feeds are public.
     </div>
   </main>
 
@@ -109,15 +110,20 @@ footer p { margin: 0; font-size: 12px; color: var(--text-muted); font-style: ita
 </div>
 
 <script>
-var WEBHOOK_URL = "https://script.google.com/a/macros/firstlineschools.org/s/AKfycbxDoGTF_WnBukv3Wl-AiSAqkSMOPnm1tMGFrIgIOWzKxjVAFRTU_0GWEOB2XcWJqcQC/exec";
+// Publish each tab individually: Google Sheet > File > Share > Publish to web >
+// select the tab > CSV > Publish. Paste the resulting links below.
+var CSV_URLS = {
+  later: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIvi-Cde4tbRTJbtbqdKIOvdA3NQGrcZ-Ktx1ITHS7L09kF7aVdwY4_8ZYJYDC8wlk7p7FfJbhEo2P/pub?gid=0&single=true&output=csv",
+  meeting: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRIvi-Cde4tbRTJbtbqdKIOvdA3NQGrcZ-Ktx1ITHS7L09kF7aVdwY4_8ZYJYDC8wlk7p7FfJbhEo2P/pub?gid=613724987&single=true&output=csv"
+};
 
-// The webhook secret is never stored in this file (it's public source on GitHub).
-// Each viewer's browser remembers its own copy, entered once.
+// Writes still go through the secured webhook (never baked into this public file).
+var WEBHOOK_URL = "https://script.google.com/a/macros/firstlineschools.org/s/AKfycbxDoGTF_WnBukv3Wl-AiSAqkSMOPnm1tMGFrIgIOWzKxjVAFRTU_0GWEOB2XcWJqcQC/exec";
 var SECRET = null;
 try { SECRET = localStorage.getItem("together_site_secret"); } catch (e) { SECRET = null; }
-
-function promptForSecret() {
-  var entered = window.prompt("Enter the Together List webhook secret to load live data (only you should have this):");
+function ensureSecret() {
+  if (SECRET) return true;
+  var entered = window.prompt("Enter the Together List webhook secret to enable adding/checking off items (only you should have this):");
   if (entered) {
     SECRET = entered.trim();
     try { localStorage.setItem("together_site_secret", SECRET); } catch (e) {}
@@ -127,4 +133,121 @@ function promptForSecret() {
 }
 
 var TABS = {
-  later: { key: "Later List", itemsId: "items-later", countId: "count-later", inputId: "input-later", btnId:
+  later: { key: "Later List", itemsId: "items-later", countId: "count-later", inputId: "input-later", btnId: "btn-later", statusId: "status-later" },
+  meeting: { key: "Meeting with Myself", itemsId: "items-meeting", countId: "count-meeting", inputId: "input-meeting", btnId: "btn-meeting", statusId: "status-meeting" }
+};
+
+function esc(s) {
+  var d = document.createElement("div");
+  d.textContent = s == null ? "" : String(s);
+  return d.innerHTML;
+}
+
+function setStatus(key, msg, isErr) {
+  var el = document.getElementById(TABS[key].statusId);
+  el.textContent = msg || "";
+  el.className = "status-line" + (isErr ? " err" : "");
+}
+
+function render(key, rows) {
+  var cfg = TABS[key];
+  var itemsEl = document.getElementById(cfg.itemsId);
+  var countEl = document.getElementById(cfg.countId);
+  var visible = rows.filter(function (r) { return r.text; });
+  if (!visible.length) {
+    itemsEl.innerHTML = '<p class="empty">Nothing here yet.</p>';
+    countEl.textContent = "0 items";
+    return;
+  }
+  var open = visible.filter(function (r) { return !r.done; }).length;
+  var done = visible.length - open;
+  countEl.textContent = open + " open" + (done ? " · " + done + " done" : "");
+  itemsEl.innerHTML = visible.map(function (r) {
+    return (
+      '<div class="item" data-row="' + r.row + '">' +
+        '<button type="button" class="box' + (r.done ? ' done' : '') + '" aria-label="toggle"></button>' +
+        '<span class="txt' + (r.done ? ' done' : '') + '">' + esc(r.text) + '</span>' +
+      '</div>'
+    );
+  }).join("");
+
+  Array.prototype.forEach.call(itemsEl.querySelectorAll(".item"), function (row) {
+    var rowNum = Number(row.getAttribute("data-row"));
+    var box = row.querySelector(".box");
+    var txt = row.querySelector(".txt");
+    function toggle() {
+      if (!ensureSecret()) return;
+      var nowDone = !box.classList.contains("done");
+      box.classList.toggle("done", nowDone);
+      txt.classList.toggle("done", nowDone);
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        body: JSON.stringify({ secret: SECRET, tab: cfg.key, action: "toggle", row: rowNum, done: nowDone })
+      }).catch(function () {
+        setStatus(key, "Couldn't save — try again.", true);
+      });
+    }
+    box.addEventListener("click", toggle);
+    txt.addEventListener("click", toggle);
+  });
+}
+
+function load(key) {
+  var cfg = TABS[key];
+  var url = CSV_URLS[key];
+  if (!url || url.indexOf("PASTE_") === 0) {
+    setStatus(key, "CSV link not configured yet.", true);
+    return;
+  }
+  Papa.parse(url + (url.indexOf("?") === -1 ? "?" : "&") + "_=" + Date.now(), {
+    download: true,
+    header: true,
+    skipEmptyLines: false,
+    complete: function (results) {
+      var rows = (results.data || []).map(function (r, i) {
+        return {
+          row: i + 2, // header is row 1 in the sheet
+          text: (r["Item"] || "").trim(),
+          done: String(r["Done"] || "").trim().toUpperCase() === "TRUE"
+        };
+      });
+      render(key, rows);
+      setStatus(key, "", false);
+    },
+    error: function (err) {
+      setStatus(key, "Couldn't load: " + err.message, true);
+    }
+  });
+}
+
+function wireAdd(key) {
+  var cfg = TABS[key];
+  var input = document.getElementById(cfg.inputId);
+  var btn = document.getElementById(cfg.btnId);
+  function doAdd() {
+    var text = input.value.trim();
+    if (!text) return;
+    if (!ensureSecret()) return;
+    btn.disabled = true;
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      body: JSON.stringify({ secret: SECRET, tab: cfg.key, action: "add", text: text })
+    }).then(function () {
+      input.value = "";
+      setStatus(key, "Added — may take a minute to show up here.", false);
+    }).catch(function () {
+      setStatus(key, "Couldn't add — try again.", true);
+    }).then(function () { btn.disabled = false; });
+  }
+  btn.addEventListener("click", doAdd);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") doAdd(); });
+}
+
+wireAdd("later");
+wireAdd("meeting");
+load("later");
+load("meeting");
+setInterval(function () { load("later"); load("meeting"); }, 60000);
+</script>
+</body>
+</html>
